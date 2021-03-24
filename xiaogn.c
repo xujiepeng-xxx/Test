@@ -1,0 +1,437 @@
+#include "xiaogn.h"
+#include "zhuti.h"
+#include <getch.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "student.h"
+#include "teacher.h"
+#include "principal.h"
+
+void show_msg(const char* msg,float sec)//显示信息几秒
+{
+	printf("%s",msg);
+	fflush(stdout);
+	usleep(sec*1000000);
+}
+void anykey_continue(void)               //按任意按键继续....
+{
+	puts("按任意按键继续....");
+	stdin->_IO_read_ptr = stdin->_IO_read_end;
+	getch();
+}
+void shuchu_mima(void)					//输出密码长度不够的信息
+{
+
+	printf("输入的密码长度应该为6位！！！");
+	anykey_continue();
+	
+}
+
+char mima_sr(char str[])       //输入密码时为星号
+{
+	int x = 0;
+ 	char c;
+ 	while(x < 49 && c != 10)   //10是回车符的ASCII码
+    {
+    	c = getch();
+    	if(c == 127)
+    	{
+    		if(x>0)
+    		{
+    			str[--x] = 0;
+    		}
+    	}
+    	else if(c != 10)			   //当输入的密码不是回车时读入
+    	{
+    	    str[x++] = c;
+     		putchar('*');
+     	}
+ 	}
+ 	str[x] = '\0';			   //在末尾加入字符串结束标志 ‘\0’
+ 	printf("\n");
+ 	if(strlen(str) != 6)	   //判断输入的密码长度
+ 	{
+ 		shuchu_mima();
+ 		return -1;			   //密码长度错误返回-1
+  	}
+  	else
+  	{
+  		return 0;      		   //密码长度正确返回0
+	}
+}
+int dengrupd_1(char str[])		//第一次登入判断
+{
+	printf("第一次登陆强制修改密码\n");
+	char num1[50],num2[50];
+	printf("请输入6位密码：");
+	if(mima_sr(num1) == -1)return -1;
+	getchar();
+	printf("请再一次输入6位密码:");
+	if(mima_sr(num2) == -1)return -1;
+	if(strcmp(num1,num2) == 0)                  //判断2次输入的密码是否一致
+	{
+		printf("密码修改成功");
+		strcpy(str,num1);						//将更改的密码复制给str返回
+		anykey_continue();
+		return 1;
+	}
+	else 
+	{
+		printf("密码不一致，返回主界面");
+		anykey_continue();
+		return -1;
+	}
+}
+int dengru_xs(void)						//学生登入验证
+{
+	int num;
+	char str[50];
+	printf("请输入学生学号：");
+	scanf("%d",&num);
+	getchar();
+	int i=0,jilu_i =-1;					//记录输入的学生学号在数组中的位置的变量
+	for(i=0;i<cnt;i++)
+	{
+		if(num == student[i].number)	    //输入的学号找到在记录中相对于的	
+		{
+			jilu_i = i;						//记录输入的学生工号在数组中的位置
+			if(0 == student[i].biaozhi_1)   //判断是否第一次登陆
+			{
+				char strr[50];
+				if(dengrupd_1(strr)==-1)return -1;
+				strcpy(student[i].password,strr);		//将更改密码记录下来
+				student[i].biaozhi_1 = 1;				//将第一次登陆的标志置1，表示不再是第一次登陆
+				anykey_continue();
+				return i;
+			}
+		}
+	}
+	if(jilu_i == -1)					    //jilu的值没变，说明没找到该学号
+	{
+		printf("查无此人");
+		anykey_continue();
+		return -1;
+	}
+	if(0 == student[jilu_i].biaozhi_2)	   //判断是否退学
+	{
+		printf("你已经退学无法再登入本系统");
+		anykey_continue();
+		return -1;
+	}
+	else if(0 == student[jilu_i].biaozhi_3)//判断密码是否被锁定
+	{
+		printf("你密码已被锁定无法再登入本系统");
+		anykey_continue();
+		return -1;
+	}
+	printf("请输入6位密码：");              //函数进行到着时说明不是第一次登陆，且找到了该学号对应的
+	mima_sr(str);
+	int cnt_mi = 1;
+	if(strcmp(str,student[jilu_i].password) == 0)//密码正确
+	{
+		printf("密码正确，登入成功");
+		anykey_continue();
+		return jilu_i;
+	}
+	else if(strcmp(str,student[jilu_i].password) != 0)//密码错误
+	{
+		printf("密码第%d次输入错误，请再次输入\n",cnt_mi++);
+		for(int j=0;j<2;j++)
+		{
+			mima_sr(str);
+			getchar();
+			if(strcmp(str,student[jilu_i].password) != 0)  //判断密码输入是否正确
+			{
+				if(cnt_mi<3)printf("密码第%d次输入错误，请再次输入\n",cnt_mi++);
+				else if(cnt_mi >=3)
+				{
+					printf("密码第3次输入错误,你的密码以被锁定，请找校长解锁");
+					anykey_continue();
+					student[jilu_i].biaozhi_3 = 0;		   //密码输错3次，将锁定密码
+					return -1;
+				}
+			}
+			else
+			{
+				printf("密码正确，登入成功");
+				anykey_continue();
+				return jilu_i;
+			}	
+		}
+	}
+	return -1;
+}
+int dengru_js(void)               			//教师登入判断
+{
+	char num_js,str[50];
+	printf("请输入教师号：");
+	scanf("%hhd",&num_js);
+	getchar();
+	int i=0,jilu_i =-1;						//jilu_i 记录输入的教师工号在数组中的位置的变量
+	for(i=0;i<cnt_j;i++)
+	{
+		if(num_js == teacher[i].number)
+		{
+			jilu_i = i;						//记录输入的教师工号在数组中的位置
+			if(0 == teacher[i].biaozhi_1)   //判断是否第一次登陆
+			{
+				char strr[50];
+				if(dengrupd_1(strr) == -1)return -1;
+				strcpy(teacher[i].password,strr);		//记录下更改的密码
+				teacher[i].biaozhi_1 = 1;				//第一次登陆的标识置1，表不再是第一次登陆
+				anykey_continue();
+				return 0;
+				
+			}
+		}
+	}
+	if(jilu_i == -1)						//jilu_i 的值没有变化说明没找到该工号
+	{
+		printf("查无此人");
+		anykey_continue();
+		return -1;
+	}
+	if(0 == teacher[jilu_i].biaozhi_2)	    //判断是否离职
+	{
+		printf("你已经离职无法再登入本系统");
+		anykey_continue();
+		return -1;
+	}
+	else if(0 == teacher[jilu_i].biaozhi_3) //判断密码是否被锁定
+	{
+		printf("你密码已被锁定无法再登入本系统");
+		anykey_continue();
+		return -1;
+	}
+	printf("请输入6位密码：");
+	mima_sr(str);
+	int cnt_mi = 1;
+	if(strcmp(str,teacher[jilu_i].password) == 0)//密码正确
+	{
+		printf("密码正确，登入成功");
+		anykey_continue();
+		return 0;
+	}
+	else if(strcmp(str,teacher[jilu_i].password) != 0)//密码错误
+	{
+		printf("密码第%d次输入错误，请再次输入\n",cnt_mi++);
+		for(int j=0;j<2;j++)
+		{
+			mima_sr(str);
+			getchar();
+			if(strcmp(str,teacher[jilu_i].password) != 0)     //判断密码是否相等
+			{
+				if(cnt_mi<3)printf("密码第%d次输入错误，请再次输入\n",cnt_mi++);
+				else if(cnt_mi >=3)
+				{
+					printf("密码第3次输入错误,你的密码以被锁定，请找校长解锁");
+					anykey_continue();
+					teacher[jilu_i].biaozhi_3 = 0;
+					return -1;
+				}
+			}
+			else
+			{
+				printf("密码正确，登入成功");
+				anykey_continue();
+				return 0;
+			}	
+		}
+	}
+	return -1;
+}
+int dengru_xz(void)							//校长登陆验证
+{
+	char str[50],num[50];
+	printf("请输入帐号：");
+	scanf("%s",num);
+	getchar();
+	if(strcmp(num,principal->zhanghao) != 0)//当帐号输入错误时直接返回主界面
+	{
+		printf("帐号输入错误");
+		anykey_continue();
+		return -1;
+	}
+	if(principal->biaozhi == 0)				//当第一次登陆时强制修改密码
+	{
+		printf("第一次登入请修改你的密码，密码长度为6位\n");
+		if(mima_sr(str) == -1)return -1;
+		printf("请再一次输入6位密码\n");
+		char str1[50];
+		if(mima_sr(str1) == -1)return -1;
+		/*if(strlen(str) != 6 || strlen(str1) != 6) //判断2次输入的密码长度是否都是6位
+		{
+			shuchu_mima();
+			return -1;
+			
+		}*/
+		if(strcmp(str,str1) == 0)				  //判断2次输入的密码是否一致
+		{
+			principal->biaozhi = 1;
+			strcpy(principal->password,str);
+			printf("密码更改成功");
+			anykey_continue();
+			return 0;
+		}
+		else 
+		{
+			printf("两次密码输入不一致");
+			anykey_continue();
+			return -1;
+		}
+	}
+	printf("请输入6位密码：");
+	if(mima_sr(str)== -1)return -1;
+	if(strcmp(num,principal->zhanghao) == 0)			//进行正常登陆的判断
+	{
+		if(strcmp(str,principal->password) == 0)		//密码正确
+		{
+			printf("密码正确，登入成功");
+			anykey_continue();
+			return 0;
+		}
+		else
+		{
+			while(1)									//实现可以一直输入密码
+			{
+				printf("密码输入错误，1.再次输入，其他按键推出登入\n");
+				char anjian = getch();
+				if(anjian == 49)
+				{
+					printf("请输入密码：");
+					if(mima_sr(str)== -1)return -1;
+					if(strcmp(str,principal->password) == 0)
+					{
+						printf("密码正确，登入成功");
+						anykey_continue();
+						return 0;
+					}
+				}
+				else                                 //按除1外的键推出更改密码
+				{
+					return -1;
+				}
+			}
+		}
+	}
+	return -1;
+}
+int dengru(int a)
+{
+	if(a == 1)
+	{
+		printf("学生登入\n");
+		return dengru_xs();
+		//学生登入
+	}
+	else if(a == 2)
+	{
+		printf("教师登入\n");
+		return dengru_js();
+		//教师登入
+	}
+	else
+	{
+		printf("校长登入\n");
+		return dengru_xz();
+		//校长登入
+	}
+	return -1;
+}
+void xianshi_x(int num_x)
+{
+	system("clear");
+	printf("********欢迎登入学生界面********\n");
+	printf("1.查询成绩\n");
+	printf("2.修改密码\n");
+	printf("3.查询个人信息\n");
+	printf("4.返回主界面\n");
+	printf("*******************************\n");
+	//显示学生界面
+	for(;;)
+	{
+		switch(getch())
+		{
+			case 49:chaxun_x_cj(num_x)  ;break;//学生查询成绩信息
+			case 50:xiugai_x(num_x)     ;break;//学生密码
+			case 51:chaxun_x_gr(num_x)  ;break;//学生查询个人信息
+			case 52:return;                    //返回主界面
+		}
+	}
+}
+void xianshi_j(void)
+{
+	system("clear");
+	printf("********欢迎登入教师界面********\n");
+	printf("1.添加学生\n");
+	printf("2.删除学生\n");
+	printf("3.查找学生\n");
+	printf("4.修改学生信息\n");
+	printf("5.输入学生成绩\n");
+	printf("6.重置学生密码\n");
+	printf("7.显示所有在校学生\n");
+	printf("8.显示所有退学学生\n");
+	printf("9.批量添加学生\n");
+	printf("a.批量输入学生成绩\n");
+	printf("b.返回主界面\n");
+	printf("c.解锁学生密码\n");
+	printf("*******************************\n");
+	//显示教师界面
+	for(;;)
+	{
+		switch(getch())
+		{
+			case 49:tianjia_xs()   ;break;//添加学生
+			case 50:shanchu_xs()   ;break;//删除学生
+			case 51:chazhao_xs()   ;break;//查找学生
+			case 52:xiugai_xs()    ;break;//修改学生信息
+			case 53:shuru_xs()     ;break;//输入学生成绩
+			case 54:chongzhi_xs()  ;break;//重置学生密码
+			case 55:xianshi_zxxs() ;break;//显示所有在校学生
+			case 56:xianshi_txxs() ;break;//显示所有退学学生
+			case 57:pl_tianjia_xs();break;//批量添加学生
+			case 97:pl_shuru_xs()  ;break;//批量输入学生成绩
+			case 98:return;				  //返回主界面
+			case 99:jiesuo_xs()    ;break;//解锁学生密码
+		}
+	}
+}
+void xianshi_a(void)
+{
+	system("clear");
+	printf("********欢迎登入校长界面********\n");
+	printf("1.重置自己的密码\n");
+	printf("2.重置教师的密码\n");
+	printf("3.添加教师\n");
+	printf("4.删除教师\n");
+	printf("5.显示所有在校教师\n");
+	printf("6.显示所有退休教师\n");
+	printf("7.批量添加教师\n");
+	printf("8.返回主界面\n");
+	printf("9.解锁教师密码\n");
+	printf("*******************************\n");
+	//显示校长界面
+	for(;;)
+	{
+		switch(getch())
+		{
+			case 49:chongzhi_a();   break;//重置自己的密码
+			case 50:chongzhi_j();   break;//重置教师的密码
+			case 51:tianjia_js();   break;//添加教师
+			case 52:shanchu_js();   break;//删除教师
+			case 53:xianshi_zxjs(); break;//显示所有在校教师
+			case 54:xianshi_txjs(); break;//显示所有退休教师
+			case 55:pl_tianjia_js();break;//批量添加教师
+			case 56:return;               //返回主界面
+			case 57:jiesuo_js();    break;//解锁教师密码
+		}
+	}
+}
+
+
+
+
+
+
+

@@ -1,0 +1,226 @@
+#include "zhuti.h"
+#include "xiaogn.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <getch.h>
+
+//定义学生、教师、校长等结构体变量
+Student* student;                              //学生结构体变量
+Teacher* teacher;                              //教师结构体变量
+Principal* principal;                          //校长结构体变量
+int cnt=0,cnt_j=0;                             //记录学生、教师的总人数
+
+
+void daoru_rs(void)                            //学生与教师总人数信息的导入
+{
+	FILE* frcp = fopen("./cnt.txt","r");       //打开记录学生人数的文件 只读的方式
+	if(NULL == frcp)                           //进行判断 是否打开成功
+	{
+		perror("fopen");
+		return;
+	}
+	fscanf(frcp,"%d %d",&cnt,&cnt_j);          //导入学生、教师总人数
+	fclose(frcp);                              //关闭文件
+}
+
+
+void daoru_xs(void)                            //学生内存的申请与学生信息的导入
+{
+
+	student = malloc(MAX_XS*sizeof(Student));  //申请堆内存
+	FILE* frsp = fopen("./student.txt","r");   //打开student文件 只读的方式
+	if(NULL == frsp)                           //进行判断 是否打开成功
+	{
+		perror("fopen");
+		return;
+	}
+	for(int j=0;j<cnt;j++)                     //导入学生信息
+	{
+		fscanf(frsp,"%s %s %d %s %hhd %hhd %hhd %hhd %hhd %hhd",student[j].name,student[j].sex,&student[j].number,student[j].password,&student[j].chinese,&student[j].math,&student[j].english,&student[j].biaozhi_1,&student[j].biaozhi_2,&student[j].biaozhi_3);
+	}
+	fclose(frsp);                              //关闭文件
+	
+}
+
+
+void daoru_js(void)                            //教师内存的申请与教师信息的导入
+{
+
+	teacher = malloc(MAX_JS*sizeof(Teacher));  //申请堆内存
+	FILE* frtp = fopen("./teacher.txt","r");   //打开teacher文件 只读的方式
+	if(NULL == frtp)                           //进行判断 是否打开成功
+	{
+		perror("fopen");
+		return;
+	}
+	for(int i=0;i<cnt_j;i++)                   //导入教师信息
+	{
+		fscanf(frtp,"%s %s %s %hhd %hhd %hhd %hhd",teacher[i].name,teacher[i].sex,teacher[i].password,&teacher[i].number,&teacher[i].biaozhi_1,&teacher[i].biaozhi_2,&teacher[i].biaozhi_3);
+	}
+	fclose(frtp);                              //关闭文件
+	
+}
+
+
+void daoru_xz(void)                            //校长内存的申请与校长信息的导入
+{
+
+	principal = malloc(sizeof(Principal));     //申请堆内存
+	FILE* frpp = fopen("./principal.txt","r"); //打开principal文件 只读的方式
+	if(NULL == frpp)                           //进行判断 是否打开成功
+	{
+		perror("fopen");
+		return;
+	}
+	fscanf(frpp,"%s %s %hhd",principal->zhanghao,principal->password,&principal->biaozhi);                                     //读入校长信息
+	fclose(frpp);                              //关闭文件
+	
+}
+
+
+void daoru(void)
+{
+
+
+	//申请堆内存
+	//从文件中导入具体数据
+	daoru_rs();                               //导入学生、教师总人数
+	daoru_xs();                               //导入学生信息
+	daoru_js();								  //导入教师信息
+	daoru_xz();								  //导入校长信息
+	
+	
+}
+
+
+void baocun_xs(void)                          //保存学生信息
+{
+
+
+	FILE* frsp = fopen("./student.txt","w");  //打开student文件 写入的方式
+	if(NULL == frsp)                          //进行判断 是否打开成功
+	{
+		perror("fopen");
+		return;
+	}
+	for(int j=0;j<cnt;j++)                    //保存学生信息
+	{
+		fprintf(frsp,"%s %s %d %s %hhd %hhd %hhd %hhd %hhd %hhd\n",student[j].name,student[j].sex,student[j].number,student[j].password,student[j].chinese,student[j].math,student[j].english,student[j].biaozhi_1,student[j].biaozhi_2,student[j].biaozhi_3);
+	}
+	fclose(frsp);                             //关闭文件
+	
+	
+}
+
+
+void baocun_js(void)                          //保存教师信息
+{
+
+
+	FILE* frtp = fopen("./teacher.txt","w");  //打开teacher文件 写入的方式
+	if(NULL == frtp)                          //进行判断 是否打开成功
+	{
+		perror("fopen");
+		return;
+	}
+	for(int j=0;j<cnt_j;j++)                 //保存教师信息
+	{
+		fprintf(frtp,"%s %s %s %hhd %hhd %hhd %hhd\n",teacher[j].name,teacher[j].sex,teacher[j].password,teacher[j].number,teacher[j].biaozhi_1,teacher[j].biaozhi_2,teacher[j].biaozhi_3);
+	}
+	fclose(frtp);                            //关闭文件
+	
+	
+}
+
+
+void baocun_xz(void)                          //保存校长信息
+{
+
+	FILE* frpp = fopen("./principal.txt","w");//打开principal文件 写入的方式
+	if(NULL == frpp)                          //进行判断 是否打开成功
+	{
+		perror("fopen");
+		return;
+	}
+	fprintf(frpp,"%s %s %hhd",principal->zhanghao,principal->password,principal->biaozhi);                                   //保存校长信息
+	fclose(frpp);                            //关闭文件
+	
+}
+
+
+void baocun(void)
+{
+
+	//保存数据
+	baocun_xs();                              //保存学生数据
+	baocun_js();                              //保存教师数据
+	baocun_xz();                              //保存校长数据
+	FILE* frcp = fopen("./cnt.txt","w");      //打开记录学生人数的文件 写入的方式
+	if(NULL == frcp)                          //进行判断 是否打开成功
+	{
+		perror("fopen");
+		return;
+	}
+	fprintf(frcp,"%d %d",cnt,cnt_j);          //保存学生,教师总人数
+	fclose(frcp);                             //关闭文件
+	//释放内存
+	free(student);
+	free(teacher);
+	free(principal);
+}
+
+void csh_xz(void)							//初始化校长的帐号、密码,帐号：admin 密码：000000
+{
+	char str[50] = "000000";
+	char str1[50] = {};
+	printf("请输入验证码:");
+	scanf("%s",str1);
+	if(strcmp(str,str1) != 0)
+	{
+		printf("验证码错误");
+		anykey_continue();
+		return;
+	}
+	strcpy(principal->zhanghao,"admin");
+	strcpy(principal->password,"000000");
+	printf("初始化成功");
+	anykey_continue();
+}
+void xianshi_z(void)
+{
+	system("clear");
+	printf("*****欢迎登入学生信息管理系统*****\n");
+	printf("1.学生登入\n");
+	printf("2.教师登入\n");
+	printf("3.校长登入\n");
+	printf("4.初始化校长的帐号、密码\n");
+	printf("5.退出系统\n");
+	printf("*********************************\n");
+	//显示主界面
+}
+
+
+int panduan_2(void)                                          //判断进入那个二级界面
+{
+	int cntt=0;
+	switch(getch())
+	{
+		case 49:if((cntt=dengru(1))>=0)xianshi_x(cntt);break;//登陆判断，进入学生二级界面
+		case 50:if(dengru(2)==0)xianshi_j();break;           //登陆判断，进入教师二级界面
+		case 51:if(dengru(3)==0)xianshi_a();break;           //登陆判断，进入校长二级界面
+		case 52:csh_xz();break; 							 //初始化校长的帐号、密码			
+		case 53:baocun();return 1;                           //保存数据，退出系统
+	}
+	return 0;
+}
+
+void run_xt(void)                                            //系统开始函数
+{
+	for(;;)
+	{
+		xianshi_z();										 //显示主界面
+		int x = panduan_2();								 //判断panduan_2()函数的返回值
+		if(x == 1)return;	
+	}
+}
